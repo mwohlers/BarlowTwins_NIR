@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "barlow-twins-nir"
+version = "0.1.0"
+description = "Barlow Twins semi-supervised learning for NIR spectroscopy"
+requires-python = ">=3.9"
+dependencies = [
+    "tensorflow>=2.12",
+    "tensorflow-probability>=0.19",
+    "numpy",
+    "pandas",
+    "scipy",
+    "scikit-learn",
+    "matplotlib",
+    "livelossplot",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["barlow_twins_nir*"]
