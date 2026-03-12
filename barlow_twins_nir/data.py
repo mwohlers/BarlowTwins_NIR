@@ -2,11 +2,14 @@
 
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from scipy.signal import savgol_filter
 from sklearn.decomposition import PCA
 from sklearn.covariance import MinCovDet
 from sklearn.preprocessing import StandardScaler
+
+# tensorflow is imported lazily (inside the three tf.data functions below) so
+# that barlow_twins_nir_torch can import the pure pandas/numpy helpers from
+# this module without requiring TensorFlow to be installed.
 
 
 def load_kiwifruit(filepath, dm_cutoff=7, min_readings=2):
@@ -186,6 +189,7 @@ def make_labeled_dataset(kiwi, nsamp, x_lower='X402', x_upper='X1065',
 
     features_sub_norm = (features_sub - features_train.mean()) / features_train.std()
 
+    import tensorflow as tf  # lazy import — not needed by torch consumers
     dataset_label = tf.data.Dataset.from_tensor_slices(
         (features_sub_norm, kiwi_sub[target_col])
     )
@@ -215,6 +219,7 @@ def make_semi_supervised_dataset(unlabeled_ds, labeled_ds, n_repeats=None,
     tf.data.Dataset
         Zipped dataset yielding ((view_a, view_b), (features, targets)).
     """
+    import tensorflow as tf  # lazy import — not needed by torch consumers
     labeled_ds = labeled_ds.shuffle(1000).repeat()
     unlabeled_ds = unlabeled_ds.shuffle(1000)
     return tf.data.Dataset.zip((unlabeled_ds, labeled_ds))
@@ -247,6 +252,7 @@ def make_validation_dataset(features_x_norm, features_y_norm,
     dataset_test : tf.data.Dataset
         Non-training dataset (validation + test) yielding (x_features, y_features, targets).
     """
+    import tensorflow as tf  # lazy import — not needed by torch consumers
     val_mask_x = repeated_kiwi_x['Dataset'] == 'Validation'
     val_mask_y = repeated_kiwi_y['Dataset'] == 'Validation'
     dataset_val = tf.data.Dataset.from_tensor_slices((

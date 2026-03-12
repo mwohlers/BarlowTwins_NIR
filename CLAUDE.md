@@ -10,41 +10,69 @@ Research code accompanying the paper **"Barlow Twins for Semi-Supervised Learnin
 
 ```
 BarlowTwins_NIR/
-├── barlow_twins_nir/           # installable package
-│   ├── __init__.py             # public API surface
-│   ├── data.py                 # loading, filtering, normalization, TF datasets
-│   ├── models.py               # encoders, BarlowLoss, BarlowRegressionModel
-│   └── utils.py                # metrics and scatter plot visualization
+├── barlow_twins_nir/               # TensorFlow backend
+│   ├── __init__.py
+│   ├── data.py                     # loading, filtering, normalization, tf.data datasets
+│   │                               # NOTE: TF imports are lazy — pure helpers are
+│   │                               # safely re-imported by barlow_twins_nir_torch
+│   ├── models.py                   # build_encoder, BarlowLoss, BarlowRegressionModel
+│   └── utils.py                    # compute_metrics, plot_predictions (no TF dep)
+├── barlow_twins_nir_torch/         # PyTorch backend
+│   ├── __init__.py
+│   ├── data.py                     # Dataset classes, DataLoader factories
+│   │                               # re-exports pure helpers from barlow_twins_nir.data
+│   ├── models.py                   # Encoder, BarlowLoss, BarlowRegressionModel, SupervisedModel
+│   ├── train.py                    # train_barlow(), train_supervised()
+│   └── utils.py                    # re-exports from barlow_twins_nir.utils
 ├── examples/
-│   └── kiwifruit_example.ipynb # clean demo notebook using the package
-├── Barlow_for_NIR_example.ipynb # original reference notebook (read-only)
+│   ├── kiwifruit_example.ipynb          # TF end-to-end demo
+│   └── kiwifruit_example_torch.ipynb   # PyTorch end-to-end demo
+├── Barlow_for_NIR_example.ipynb    # original reference notebook (read-only)
 ├── pyproject.toml
 ├── requirements.txt
 └── README.md
 ```
 
+### Shared data utilities
+
+`load_kiwifruit`, `remove_outliers`, `normalize_features`, and `make_paired_views`
+live in `barlow_twins_nir/data.py` and have **no TensorFlow dependency** (TF is
+imported lazily only inside the `tf.data`-returning functions). Both packages
+import these functions directly from that module.
+
 ## Installation
 
 ```bash
-pip install -e .          # editable install from repo root
-# or
-pip install -r requirements.txt
-```
+# TensorFlow backend
+pip install -e .[tensorflow]
 
-Core dependencies: `tensorflow>=2.16`, `tensorflow-probability>=0.24`, `pandas`, `numpy`, `scipy`, `scikit-learn`, `matplotlib`, `livelossplot`.
+# PyTorch backend
+pip install -e .[torch]
+
+# Both
+pip install -e .[all]
+```
 
 ## Quick Start
 
 ```python
+# TensorFlow
 from barlow_twins_nir import (
-    load_kiwifruit, remove_outliers, normalize_features,
-    make_paired_views, make_labeled_dataset, make_semi_supervised_dataset,
-    make_validation_dataset, BarlowRegressionModel, build_supervised_model,
-    compute_metrics, plot_predictions,
+    load_kiwifruit, remove_outliers, normalize_features, make_paired_views,
+    make_labeled_dataset, make_semi_supervised_dataset, make_validation_dataset,
+    BarlowRegressionModel, build_supervised_model, compute_metrics, plot_predictions,
+)
+
+# PyTorch
+from barlow_twins_nir_torch import (
+    load_kiwifruit, remove_outliers, normalize_features, make_paired_views,
+    PairedNIRDataset, LabeledNIRDataset, make_labeled_dataset,
+    make_validation_dataloaders, BarlowRegressionModel, SupervisedModel,
+    train_barlow, train_supervised, compute_metrics, plot_predictions,
 )
 ```
 
-See `examples/kiwifruit_example.ipynb` for a complete end-to-end walkthrough.
+See `examples/kiwifruit_example.ipynb` (TF) and `examples/kiwifruit_example_torch.ipynb` (PyTorch).
 
 ## Original Notebook
 
@@ -86,14 +114,21 @@ The notebook implements a **semi-supervised regression model** for predicting fr
 
 **`build_supervised_model()`** — Builds and compiles a functional Keras model (encoder + regression head) trained with MSE only, for baseline comparison.
 
+### PyTorch equivalents (`barlow_twins_nir_torch`)
+
+- `Encoder` — `nn.Module` matching the TF encoder (frozen SG Conv1d + trainable Conv1d + Linear stack)
+- `BarlowLoss` — `nn.Module`; uses normalized dot-product correlation (equivalent to `tfp.stats.correlation`)
+- `BarlowRegressionModel` — `nn.Module` with a `compute_loss(unlabeled, labeled)` method
+- `SupervisedModel` — `nn.Module` (encoder + regression head, MSE training)
+- `train_barlow()` / `train_supervised()` — training loops with Adam, `ReduceLROnPlateau`, early stopping, and best-weights checkpointing; `train_barlow` uses `itertools.cycle` to pair labeled/unlabeled batches
+
 ### Training Setup
-- `make_semi_supervised_dataset()`: zips a large unlabeled `tf.data.Dataset` with a repeated small labeled dataset
-- Callbacks: `PlotLossesKerasTF` (live loss plot), `EarlyStopping`, `ReduceLROnPlateau`, `ModelCheckpoint`
-- Optimizer: Adam (lr=0.005) with gradient clipping (`clipvalue=1.0`)
-- Model saved to `model4a_weights.keras`
+- **TF:** `make_semi_supervised_dataset()` zips a large unlabeled `tf.data.Dataset` with a repeated small labeled dataset; callbacks: `PlotLossesKerasTF`, `EarlyStopping`, `ReduceLROnPlateau`, `ModelCheckpoint`
+- **PyTorch:** `train_barlow()` iterates `zip(unlabeled_loader, cycle(labeled_loader))`; both functions handle LR scheduling, early stopping, and checkpointing internally
+- Optimizer: Adam (lr=0.005), gradient clipping (clipvalue=1.0)
 
 ### Baseline Comparison
-The notebook also trains a standard supervised model (MSE-only, no Barlow loss) on the same small labeled subset using `build_encoder` + `get_regression_head` as a Keras functional model, for comparison against the semi-supervised approach.
+Both backends train a supervised (MSE-only) model on the same small labeled subset using the same encoder + regression head architecture, for direct comparison against the semi-supervised Barlow Twins approach.
 
 ## Key Configuration Parameters
 
