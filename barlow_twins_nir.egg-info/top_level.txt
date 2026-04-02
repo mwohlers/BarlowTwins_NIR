@@ -1,0 +1,2 @@
+barlow_twins_nir
+barlow_twins_nir_torch

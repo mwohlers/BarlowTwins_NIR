@@ -1,0 +1,22 @@
+Metadata-Version: 2.4
+Name: barlow-twins-nir
+Version: 0.1.0
+Summary: Barlow Twins semi-supervised learning for NIR spectroscopy
+Requires-Python: >=3.9
+License-File: LICENSE
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: scipy
+Requires-Dist: scikit-learn
+Requires-Dist: matplotlib
+Requires-Dist: livelossplot
+Provides-Extra: tensorflow
+Requires-Dist: tensorflow>=2.16; extra == "tensorflow"
+Requires-Dist: tensorflow-probability>=0.24; extra == "tensorflow"
+Provides-Extra: torch
+Requires-Dist: torch>=2.0; extra == "torch"
+Provides-Extra: all
+Requires-Dist: tensorflow>=2.16; extra == "all"
+Requires-Dist: tensorflow-probability>=0.24; extra == "all"
+Requires-Dist: torch>=2.0; extra == "all"
+Dynamic: license-file

@@ -1,0 +1,17 @@
+LICENSE
+README.md
+pyproject.toml
+barlow_twins_nir/__init__.py
+barlow_twins_nir/data.py
+barlow_twins_nir/models.py
+barlow_twins_nir/utils.py
+barlow_twins_nir.egg-info/PKG-INFO
+barlow_twins_nir.egg-info/SOURCES.txt
+barlow_twins_nir.egg-info/dependency_links.txt
+barlow_twins_nir.egg-info/requires.txt
+barlow_twins_nir.egg-info/top_level.txt
+barlow_twins_nir_torch/__init__.py
+barlow_twins_nir_torch/data.py
+barlow_twins_nir_torch/models.py
+barlow_twins_nir_torch/train.py
+barlow_twins_nir_torch/utils.py
